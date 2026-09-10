@@ -1,0 +1,13 @@
+#Il .gitignore è un file di testo semplice dove scrivi, riga per riga, cosa Git deve ignorare — cioè non tracciare mai, anche se il file esiste nella cartella (ad esempio se una chiave API finisce su GitHub anche solo per un commit, è considerata compromessa per sempre, perché lo storico Git è pubblico e chiunque può cercarla nei commit vecchi anche se poi la cancelli)
+
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Segreti
+.env
+
+# Editor/OS
+.vscode/
+.DS_Store
