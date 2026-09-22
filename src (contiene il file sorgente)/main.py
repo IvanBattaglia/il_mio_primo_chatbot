@@ -1,11 +1,19 @@
+import os
+from dotenv import load_dotenv
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
+
+load_dotenv()  # load_dotenv() cerca automaticamente un file .env nella cartella corrente (o nelle cartelle superiori), lo legge e carica ogni riga come variabile d'ambiente, os.getenv("NOME_VARIABILE") la legge da dentro Python, restituendo None se non esiste
 
 # creo un client per interagire con l'API di Ollama in locale
 client = OpenAI(
     base_url="http://localhost:11434/v1",  # Quando Ollama è in esecuzione, espone automaticamente un server web locale sulla porta 11434
     api_key="ollama",  # valore fittizio, Ollama non lo controlla (è obbligatorio inserire un API key, ma ollama che lavora in locale non lo controlla)
 )
+# Esempio di come leggeresti una chiave vera, quando ne avrai una:
+# groq_key = os.getenv("GROQ_API_KEY")
+
+
 # creo una lista a turni della conversazione: role (chi sta "parlando": system per le istruzioni di comportamento, user per l'input dell'utente) e content (il testo vero e proprio)
 messaggi: list[ChatCompletionMessageParam] = [
     {"role": "system", "content": "Sei un assistente utile e conciso."},
