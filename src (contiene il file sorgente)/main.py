@@ -14,14 +14,16 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()  # load_dotenv() cerca automaticamente un file .env nella cartella corrente (o nelle cartelle superiori), lo legge e carica ogni riga come variabile d'ambiente, os.getenv("NOME_VARIABILE") la legge da dentro Python, restituendo None se non esiste
 
-# creo un client per interagire con l'API di groq
+# creo un client per interagire con l'API di google
 client = OpenAI(
-    base_url="https://api.groq.com/openai/v1",
-    api_key=os.getenv("GROQ_API_KEY"),
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    api_key=os.getenv("GOOGLE_API_KEY"),
 )
 
 # decido quale modello usare
-modello = "openai/gpt-oss-120b"  # controlla su https://console.groq.com/playground i nomi modello disponibili
+modello = (
+    "gemini-3-flash-preview"  # controlla su google ai studio i nomi modello disponibili
+)
 # creo una lista a turni della conversazione: role (chi sta "parlando": system per le istruzioni di comportamento, user per l'input dell'utente) e content (il testo vero e proprio)
 messaggi: list[ChatCompletionMessageParam] = [
     {"role": "system", "content": "Sei un assistente utile e conciso."},
