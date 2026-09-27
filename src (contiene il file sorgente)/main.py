@@ -20,22 +20,50 @@ def chiama_con_retry_e_fallback(client, modello, messaggi, tentativi_massimi=3):
                 model=modello,
                 messages=messaggi,
                 temperature=0,
-                # timeout=0.001,  # per testare il retry, timeout molto basso
+                stream=True,  # grazie allo streaming, possiamo ricevere la risposta in tempo reale e non dobbiamo aspettare che il modello finisca di generare tutto il testo prima di riceverlo
+                # Con stream=True, risposta non è più un oggetto singolo con la risposta pronta, diventa un iteratore: qualcosa su cui puoi scorrere con un ciclo for
+                stream_options={
+                    "include_usage": True
+                },  # permette di ricevere anche i dati sui token usati, se disponibili
             )
-            if risposta.usage is not None:
+
+            print(f"{modello}: ", end="", flush=True)
+
+            testo_completo = ""
+            usage_finale = 0
+
+            for chunk in risposta:
+                # devo eseguire entrambi i controlli 1 e 2, non sono ridondanti: il primo controlla "posso accedere in sicurezza all'indice 0?", il secondo controlla "il valore che ho trovato è utilizzabile?".
+                if (
+                    chunk.choices
+                ):  # 1_la lista ha almeno un elemento? (evita IndexError)
+                    delta = chunk.choices[0].delta.content
+                    if (
+                        delta
+                    ):  # 2_quell'elemento ha del testo? (evita l' errore causato dall' assegnare 'None' a una variabile stringa)
+                        print(delta, end="", flush=True)
+                        testo_completo += delta
+                if (
+                    chunk.usage
+                ):  # verifico di essere arrivato al chunk finale che contiene i dati sui token
+                    usage_finale = (
+                        chunk.usage
+                    )  # assegna, non sommare: arriva già come totale
+
+            print()  # a capo, dopo che lo streaming è finito
+
+            if usage_finale:
                 logger.info(
-                    f"Risposta ricevuta - token usati: {risposta.usage.total_tokens} "
-                    f"(prompt: {risposta.usage.prompt_tokens}, completion: {risposta.usage.completion_tokens})"
+                    f"Risposta ricevuta - token usati: {usage_finale.total_tokens} "
+                    f"(prompt: {usage_finale.prompt_tokens}, completion: {usage_finale.completion_tokens})"
                 )
             else:
                 logger.info(
                     "Risposta ricevuta - i dati sui token non sono disponibili."
                 )
             logger.info(f"Successo al tentativo {tentativo}")
-            messaggi.append(
-                {"role": "assistant", "content": risposta.choices[0].message.content}
-            )
-            return risposta.choices[0].message.content
+            messaggi.append({"role": "assistant", "content": testo_completo})
+            return None
 
         except (
             openai.RateLimitError,
@@ -83,17 +111,13 @@ modello = "gemini-3-flash-preview"
 
 messaggi: list[ChatCompletionMessageParam] = [
     {"role": "system", "content": "Sei un assistente utile e conciso."},
-    {"role": "user", "content": "dimmi un numero casuale tra 1 e 100."},
+    {"role": "user", "content": "scrivi una lista dettagliata di 20 punti su X."},
 ]
 
-print(
-    "Turno 1:",
-    chiama_con_retry_e_fallback(client, modello, messaggi, tentativi_massimi=3),
-)
+print("Turno 1: ")
+chiama_con_retry_e_fallback(client, modello, messaggi, tentativi_massimi=3)
 
-messaggi.append({"role": "user", "content": "che numero casuale mi hai detto?"})
+messaggi.append({"role": "user", "content": "che lista mi hai scritto?"})
 
-print(
-    "Turno 2:",
-    chiama_con_retry_e_fallback(client, modello, messaggi, tentativi_massimi=3),
-)
+print("Turno 2: ")
+chiama_con_retry_e_fallback(client, modello, messaggi, tentativi_massimi=3)
